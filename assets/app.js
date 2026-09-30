@@ -110,7 +110,7 @@ function renderStatus(error) {
   el.lastElementChild.textContent = state.source === 'live'
     ? `Live · updated ${when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
     : `Snapshot · ${when.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
-  el.title = state.source === 'live' ? 'Prices loaded live from CoinGecko' : 'The live API is busy, so this shows the latest daily snapshot';
+  el.title = state.source === 'live' ? 'Prices loaded live from CoinPaprika' : 'The live feed is unavailable, so this shows the latest daily snapshot';
 }
 
 function renderKpis() {
