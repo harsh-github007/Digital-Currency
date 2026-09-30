@@ -154,7 +154,7 @@ function renderTable() {
   $('rows').innerHTML = rows.map(c => `
     <tr tabindex="0" data-id="${esc(c.id)}" aria-selected="${c.id === state.selected}">
       <td class="num muted">${c.rank ?? ''}</td>
-      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)} <span class="sym">${esc(c.symbol)}</span></span>${c.kind === 'stable' ? '<span class="tag">stable</span>' : c.kind === 'wrapped' ? `<span class="tag" title="Tracks the price of ${esc(c.tracks)}">wrapped</span>` : ''}</span></td>
+      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(c.name)} <span class="sym">${esc(c.symbol)}</span></span>${c.kind === 'stable' ? '<span class="tag">stable</span>' : c.kind === 'wrapped' ? `<span class="tag" title="Tracks the price of ${esc(c.tracks)}">wrapped</span>` : ''}</span></td>
       <td class="num">${usd(c.price)}</td>
       <td class="num ${cls(c.ch24)}">${pct(c.ch24)}</td>
       <td class="num hide-xs ${cls(c.ch7)}">${pct(c.ch7)}</td>
@@ -178,7 +178,17 @@ function skeleton() {
 let priceChart, scatterChart;
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
+const hasCharts = () => typeof Chart !== 'undefined';
+
+// The page must still show prices, the table and the correlation grid if the
+// chart library fails to load, so every chart call checks for it first.
+const NO_CHARTS = 'The chart library could not be loaded, so this chart is unavailable. Everything else on the page still works.';
+function chartsUnavailable() {
+  $('chartNote').textContent = NO_CHARTS;
+}
+
 function chartDefaults() {
+  if (!hasCharts()) return;
   Chart.defaults.font.family = css('--sans');
   Chart.defaults.color = css('--muted');
   Chart.defaults.borderColor = css('--line');
@@ -253,6 +263,7 @@ async function renderDetail() {
       y1: { display: false, max: Math.max(...s.v) * 4, beginAtZero: true },
     },
   };
+  if (!hasCharts()) return;
   if (priceChart) { priceChart.data = data; priceChart.options = options; priceChart.update(); }
   else priceChart = new Chart($('priceChart'), { data, options });
 }
@@ -293,6 +304,7 @@ function renderScatter() {
       ctx.restore();
     },
   };
+  if (!hasCharts()) { $('scatterEmpty').textContent = NO_CHARTS; $('scatterEmpty').hidden = false; return; }
   scatterChart?.destroy();
   scatterChart = new Chart($('scatter'), {
     type: 'scatter',
@@ -386,6 +398,7 @@ async function start() {
     return;
   }
   renderStatus(); renderKpis(); renderTable();
+  if (!hasCharts()) chartsUnavailable();
   renderDetail(); renderScatter(); renderHeat();
   setInterval(() => { if (!document.hidden) refresh().catch(() => {}); }, REFRESH_MS);
 }
