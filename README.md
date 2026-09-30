@@ -2,7 +2,7 @@
 
 A web dashboard for the 30 largest cryptocurrencies by market value. It shows live prices, and how risky each coin has been over the past year: volatility, worst drawdown, beta and correlation to Bitcoin, and how the largest coins move together.
 
-**Live site:** _add the link once deployed_
+**Live site:** https://harsh-github007.github.io/Digital-Currency/
 
 ## What it shows
 
@@ -40,7 +40,7 @@ Daily GitHub Action ──> data/markets.json, history.json, history.csv
   - Beta and correlation compare each coin's daily returns with Bitcoin's on the same dates.
   - Stablecoins (annualised volatility under 5% over 90 days) are left out of the risk charts.
 
-There is no build step and no server: the site is static HTML, CSS and JavaScript, with [Chart.js](https://www.chartjs.org/) for the charts.
+There is no build step and no server: the site is static HTML, CSS and JavaScript. [Chart.js](https://www.chartjs.org/) is committed to `assets/vendor/` rather than loaded from a CDN, so the page has no third-party dependency at run time and still works if that CDN is blocked or down. If the chart library cannot be loaded at all, the prices, table and correlation grid still render and the charts say so in place.
 
 ## Running it
 
@@ -50,7 +50,7 @@ npm test                      # statistics tests (Node 18+)
 python -m pytest tests        # snapshot script tests
 ```
 
-**Deploying.** Any static host works. On Vercel or Netlify, import the repository with no build command. On GitHub Pages, go to *Settings → Pages* and deploy from the `main` branch, root folder.
+**Deploying.** Any static host works, and the site runs from a subfolder as well as a domain root. It is published with GitHub Pages from *Settings → Pages*, deploying the `main` branch, root folder. On Vercel or Netlify, import the repository with no build command.
 
 **Daily snapshot.**
 - The Action runs every day at 01:17 UTC and can be started by hand from the *Actions* tab.
