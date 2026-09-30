@@ -124,6 +124,10 @@ tbody tr[aria-selected="true"] { background: color-mix(in srgb, var(--accent) 12
 }
 @media (max-width: 640px) {
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* keep the price and 24h columns on screen: long coin names truncate instead of pushing them off */
+  .coin { min-width: 0; }
+  .coin > span:not(.tag) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td:nth-child(2) { max-width: 46vw; }
   .top-inner { flex-direction: column; align-items: flex-start; }
   .hide-sm { display: none; }
   .search input { width: 120px; }
