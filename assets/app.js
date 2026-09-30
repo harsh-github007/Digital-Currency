@@ -114,7 +114,11 @@ function renderStatus(error) {
 }
 
 function renderKpis() {
-  const cs = state.coins;
+  const cs = state.hideStable ? state.coins.filter(c => c.kind === 'coin') : state.coins;
+  const scope = state.hideStable ? `the ${cs.length} coins` : 'top 30';
+  const labels = document.querySelectorAll('.kpis .label');
+  labels[0].textContent = state.hideStable ? `Market value, ${cs.length} coins` : 'Top 30 market value';
+  labels[2].textContent = `Bitcoin's share of ${scope}`;
   const cap = cs.reduce((s, c) => s + (c.cap || 0), 0);
   const vol = cs.reduce((s, c) => s + (c.vol || 0), 0);
   const btc = cs.find(c => c.id === BTC);
@@ -127,7 +131,9 @@ function renderKpis() {
   $('kBtc').textContent = btc ? pctPlain(btc.cap / cap) : '–';
   $('kBtcSub').textContent = btc ? `Bitcoin ${usd(btc.price, { digits: 0 })}` : '';
   $('kBreadth').innerHTML = `<span class="up">${up}</span> / <span class="down">${down}</span>`;
-  $('kBreadthSub').textContent = `${cs.filter(c => c.kind === 'stable').length} stablecoins, ${cs.filter(c => c.kind === 'wrapped').length} wrapped tokens`;
+  $('kBreadthSub').textContent = state.hideStable
+    ? 'stablecoins and wrapped tokens left out'
+    : `${cs.filter(c => c.kind === 'stable').length} stablecoins, ${cs.filter(c => c.kind === 'wrapped').length} wrapped tokens`;
 }
 
 // ---------------------------------------------------------------- table
@@ -371,7 +377,7 @@ function wire() {
     renderTable();
   }));
   $('q').addEventListener('input', e => { state.query = e.target.value; renderTable(); });
-  $('hideStable').addEventListener('change', e => { state.hideStable = e.target.checked; renderTable(); });
+  $('hideStable').addEventListener('change', e => { state.hideStable = e.target.checked; renderKpis(); renderTable(); });
   document.querySelectorAll('.ranges button').forEach(b => b.addEventListener('click', () => { state.range = +b.dataset.d; renderDetail(); }));
   window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && id !== state.selected) select(id); });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { chartDefaults(); priceChart?.destroy(); priceChart = null; renderDetail(); renderScatter(); });
