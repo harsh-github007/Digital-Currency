@@ -270,7 +270,7 @@ function select(id) {
 function riskCoins() {
   const snap = state.snapshot?.coins;
   if (!snap) return [];
-  return state.coins.filter(c => snap[c.id] && c.kind === 'coin' && snap[c.id].p.length > 200).map(c => ({ ...c, h: snap[c.id] }));
+  return state.coins.filter(c => snap[c.id] && c.kind === 'coin' && snap[c.id].p.length >= 360).map(c => ({ ...c, h: snap[c.id] }));
 }
 
 function renderScatter() {
@@ -281,7 +281,7 @@ function renderScatter() {
     return;
   }
   $('scatterEmpty').hidden = true;
-  const pts = coins.map(c => ({ x: M.annualisedVol(c.h.p) * 100, y: M.totalReturn(c.h.p) * 100, label: c.symbol, name: c.name, cap: c.cap, rank: c.rank }));
+  const pts = coins.map(c => ({ x: M.annualisedVol(c.h.p) * 100, y: 100 * (1 + M.totalReturn(c.h.p)), ret: M.totalReturn(c.h.p), label: c.symbol, name: c.name, cap: c.cap, rank: c.rank }));
   const maxCap = Math.max(...pts.map(p => p.cap));
   const labels = {
     id: 'labels',
@@ -296,13 +296,22 @@ function renderScatter() {
   scatterChart?.destroy();
   scatterChart = new Chart($('scatter'), {
     type: 'scatter',
-    data: { datasets: [{ data: pts, pointRadius: pts.map(p => 4 + 10 * Math.sqrt(p.cap / maxCap)), backgroundColor: pts.map(p => (p.y >= 0 ? css('--up') : css('--down')) + 'aa'), borderWidth: 0 }] },
+    data: { datasets: [{ data: pts, pointRadius: pts.map(p => 4 + 10 * Math.sqrt(p.cap / maxCap)), backgroundColor: pts.map(p => (p.ret >= 0 ? css('--up') : css('--down')) + 'aa'), borderWidth: 0 }] },
     options: {
       responsive: true, maintainAspectRatio: false, animation: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => `${i.raw.name}: ${i.raw.y >= 0 ? '+' : ''}${i.raw.y.toFixed(0)}% return, ${i.raw.x.toFixed(0)}% volatility` } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: i => `${i.raw.name}: ${pct(i.raw.ret, 0)} return, ${i.raw.x.toFixed(0)}% volatility` } } },
       scales: {
         x: { title: { display: true, text: 'Annualised volatility (%)' }, beginAtZero: true },
-        y: { title: { display: true, text: 'One-year return (%)' }, grid: { color: c => c.tick.value === 0 ? css('--muted') : css('--line') } },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'What $100 a year ago is worth now (log scale)' },
+          afterBuildTicks: axis => {
+            const nice = [10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
+            axis.ticks = nice.filter(v => v >= axis.min && v <= axis.max).map(value => ({ value }));
+          },
+          ticks: { callback: v => '$' + v.toLocaleString('en-US') },
+          grid: { color: c => c.tick.value === 100 ? css('--muted') : css('--line') },
+        },
       },
       onClick: (_, els) => { if (els[0]) select(coins[els[0].index].id); },
     },
