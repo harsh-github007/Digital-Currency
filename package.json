@@ -2,5 +2,5 @@
   "name": "digital-currency",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/metrics.test.mjs" }
+  "scripts": { "test": "node --test tests/metrics.test.mjs tests/sources.test.mjs" }
 }

@@ -19,15 +19,21 @@ A web dashboard for the 30 largest cryptocurrencies by market value. It shows li
 ## How it works
 
 ```
-CoinGecko API ──live, in the browser──> index.html (prices, 24h/7d/30d changes)
-      │
-      └──daily GitHub Action──> data/history.json, markets.json, history.csv
-                                 (one year of daily prices: risk statistics, correlations,
-                                  and a fallback when the live API is rate-limited)
+CoinPaprika ──live, in the browser──> ranking, prices, market value, 24h/7d changes
+Kraken      ──live, in the browser──> one year of daily prices for the selected coin
+   (Coinbase, Binance.US as fallbacks)
+
+Daily GitHub Action ──> data/markets.json, history.json, history.csv
+   (a year of daily prices for the whole top 30: 30-day and 1-year changes,
+    sparklines, the risk charts, and a fallback if the live feeds fail)
 ```
 
-- **Live prices** come from the free [CoinGecko API](https://www.coingecko.com/en/api), called directly from the visitor's browser. The page refreshes them every two minutes.
-- **One year of daily history** for all 30 coins is saved once a day by [`.github/workflows/snapshot.yml`](.github/workflows/snapshot.yml), which runs [`scripts/snapshot.py`](scripts/snapshot.py). Saving it in the repository keeps the page fast and avoids the free API's rate limit. If the live API is busy, the page shows the snapshot and says so.
+- **Live prices** come from the free [CoinPaprika API](https://api.coinpaprika.com), called directly from the visitor's browser and refreshed every two minutes.
+- **Daily price history** comes from [Kraken](https://docs.kraken.com/api/)'s public market data. Coinbase and Binance.US are used when Kraken doesn't list a coin. All three need no key and allow browser requests.
+- **The daily snapshot:**
+  - Once a day, [`.github/workflows/snapshot.yml`](.github/workflows/snapshot.yml) runs [`scripts/snapshot.py`](scripts/snapshot.py) to save a year of history for the whole top 30 in `data/`.
+  - The page uses it for the 30-day and 1-year changes, the sparklines and the risk charts, and falls back to it if the live feeds are down, saying so in the status badge.
+- **Wrapped tokens** such as WBTC and stETH track another coin's price and have no exchange market of their own, so they are labelled and left out of the risk charts.
 - **Statistics** are calculated in [`assets/metrics.js`](assets/metrics.js):
   - Volatility is the standard deviation of daily log returns × √365 (crypto trades every day).
   - Max drawdown is the largest fall from a previous high.
@@ -49,7 +55,7 @@ python -m pytest tests        # snapshot script tests
 **Daily snapshot.**
 - The Action runs every day at 01:17 UTC and can be started by hand from the *Actions* tab.
 - It commits updated files in `data/` only when something changed.
-- It works without a key. Adding a free CoinGecko demo key as a repository secret named `COINGECKO_API_KEY` makes it more reliable.
+- It needs no API keys.
 
 ## Project history
 
@@ -59,6 +65,8 @@ The first version (2022) was a Power BI dashboard fed by Yahoo Finance's CSV dow
 - **The headline cards added prices together,** so "Open", "High" and "Low" showed sums across days rather than prices.
 - **The file only ran on one computer.** It read from a fixed path on the original author's PC and needed Power BI Desktop, which runs only on Windows.
 - **The coin list was out of date.** Several coins in it have since collapsed or been delisted, including FTT and BUSD. The new version always uses the current top 30.
+
+The rebuild first used CoinGecko's free API, but by 2026 its content delivery network rejected keyless data requests from browsers and GitHub's servers, so the data now comes from CoinPaprika and the exchanges' own public feeds.
 
 ## Disclaimer
 
