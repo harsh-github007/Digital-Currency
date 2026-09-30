@@ -1,0 +1,40 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  # The daily snapshot commits with the built-in token, which does not start
+  # other workflows, so redeploy when that workflow finishes instead.
+  workflow_run:
+    workflows: ["Daily snapshot"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Turn on Pages if it is not on yet
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4

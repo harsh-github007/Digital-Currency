@@ -50,7 +50,7 @@ npm test                      # statistics tests (Node 18+)
 python -m pytest tests        # snapshot script tests
 ```
 
-**Deploying.** Any static host works, and the site runs from a subfolder as well as a domain root. It is published with GitHub Pages from *Settings → Pages*, deploying the `main` branch, root folder. On Vercel or Netlify, import the repository with no build command.
+**Deploying.** The site is published to GitHub Pages by [`.github/workflows/pages.yml`](.github/workflows/pages.yml), which runs on every push to `main` and again after each daily snapshot, so the published data stays current. Any other static host works too: on Vercel or Netlify, import the repository with no build command. The site runs from a subfolder as well as a domain root.
 
 **Daily snapshot.**
 - The Action runs every day at 01:17 UTC and can be started by hand from the *Actions* tab.
