@@ -334,7 +334,7 @@ function renderScatter() {
 function heatColour(r) {
   // orange for positive correlation, blue for negative, transparent near zero
   const a = Math.min(1, Math.abs(r));
-  return r >= 0 ? `rgba(247, 147, 26, ${0.1 + 0.8 * a})` : `rgba(59, 130, 246, ${0.1 + 0.8 * a})`;
+  return r >= 0 ? `rgba(255, 90, 31, ${0.1 + 0.8 * a})` : `rgba(59, 130, 246, ${0.1 + 0.8 * a})`;
 }
 
 function renderHeat() {
