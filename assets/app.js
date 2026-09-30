@@ -1,6 +1,8 @@
 import * as M from './metrics.js';
+import { fetchMarkets, fetchHistory } from './sources.js';
 
-const API = 'https://api.coingecko.com/api/v3';
+const BTC = 'btc-bitcoin';
+
 const REFRESH_MS = 120_000;
 const $ = id => document.getElementById(id);
 
@@ -10,7 +12,7 @@ const state = {
   updated: null,      // Date of the market data
   snapshot: null,     // { generated, coins: {id: {symbol, name, t, p, v, m}} } or null
   histories: new Map(),
-  selected: location.hash.slice(1) || 'bitcoin',
+  selected: location.hash.slice(1) || BTC,
   range: 365,
   sort: { key: 'rank', dir: 1 },
   query: '',
@@ -45,29 +47,25 @@ async function getJSON(url, timeout = 12_000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeout);
   try {
-    const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    const r = await fetch(url, { signal: ctrl.signal });
     if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
     return await r.json();
   } finally { clearTimeout(t); }
 }
 
-function normalise(c) {
-  const f = x => (x == null ? null : x / 100);
-  return {
-    id: c.id, rank: c.market_cap_rank, name: c.name, symbol: String(c.symbol).toUpperCase(), image: c.image,
-    price: c.current_price, cap: c.market_cap, vol: c.total_volume,
-    ch24: f(c.price_change_percentage_24h_in_currency ?? c.price_change_percentage_24h),
-    ch7: f(c.price_change_percentage_7d_in_currency), ch30: f(c.price_change_percentage_30d_in_currency),
-    ch1y: f(c.price_change_percentage_1y_in_currency),
-    ath: f(c.ath_change_percentage), athDate: c.ath_date,
-    spark: c.sparkline_in_7d?.price || [],
-  };
-}
-
-function looksStable(c) {
-  const h = state.snapshot?.coins[c.id];
-  if (h) return M.isStable(h.p);
-  return c.price > 0.97 && c.price < 1.03 && Math.abs(c.ch7 ?? 1) < 0.01 && Math.abs(c.ch30 ?? 1) < 0.02;
+/** Fill in what the live ticker lacks (30-day and 1-year change, sparkline) from saved history,
+ *  and confirm stablecoins by their measured volatility. */
+function enrich(c) {
+  const h = state.snapshot?.coins[c.id] || state.histories.get(c.id);
+  if (h && h.p.length > 31) {
+    const p = h.p, last = c.price ?? p[p.length - 1];
+    c.ch30 = last / p[p.length - 31] - 1;
+    c.ch1y = p.length > 360 ? last / p[0] - 1 : null;
+    c.spark = p.slice(-8);
+    if (c.kind === 'coin' && M.isStable(p)) c.kind = 'stable';
+  }
+  c.spark ||= [];
+  return c;
 }
 
 async function loadSnapshot() {
@@ -80,34 +78,25 @@ async function loadSnapshot() {
 
 async function loadMarkets(snapshotMarkets) {
   try {
-    const live = await getJSON(`${API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=30&page=1&sparkline=true&price_change_percentage=24h,7d,30d,1y`);
-    if (!Array.isArray(live) || !live.length) throw new Error('empty');
-    state.coins = live.map(normalise);
+    state.coins = await fetchMarkets();
     state.source = 'live';
     state.updated = new Date();
   } catch (err) {
     if (snapshotMarkets) {
-      state.coins = snapshotMarkets.coins.map(normalise);
+      state.coins = snapshotMarkets.coins.map(c => ({ ...c }));
       state.source = 'snapshot';
       state.updated = new Date(snapshotMarkets.generated);
     } else if (!state.coins.length) {
       throw err;
     }
   }
-  state.coins.forEach(c => { c.stable = looksStable(c); });
+  state.coins.forEach(enrich);
 }
 
-async function loadHistory(id) {
-  if (state.histories.has(id)) return state.histories.get(id);
-  let h = state.snapshot?.coins[id];
-  if (!h) {
-    const r = await getJSON(`${API}/coins/${encodeURIComponent(id)}/market_chart?vs_currency=usd&days=365&interval=daily`);
-    const byDay = pts => { const m = new Map(); pts.forEach(([ms, v]) => m.set(new Date(ms).toISOString().slice(0, 10), v)); return m; };
-    const p = byDay(r.prices), v = byDay(r.total_volumes), m = byDay(r.market_caps);
-    const t = [...p.keys()].sort();
-    h = { t, p: t.map(d => p.get(d)), v: t.map(d => v.get(d) ?? 0), m: t.map(d => m.get(d) ?? 0) };
-  }
-  state.histories.set(id, h);
+async function loadHistory(coin) {
+  if (state.histories.has(coin.id)) return state.histories.get(coin.id);
+  const h = state.snapshot?.coins[coin.id] || await fetchHistory(coin.symbol);
+  state.histories.set(coin.id, h);
   return h;
 }
 
@@ -128,7 +117,7 @@ function renderKpis() {
   const cs = state.coins;
   const cap = cs.reduce((s, c) => s + (c.cap || 0), 0);
   const vol = cs.reduce((s, c) => s + (c.vol || 0), 0);
-  const btc = cs.find(c => c.id === 'bitcoin');
+  const btc = cs.find(c => c.id === BTC);
   const up = cs.filter(c => c.ch24 > 0).length, down = cs.filter(c => c.ch24 < 0).length;
   const capPrev = cs.reduce((s, c) => s + (c.cap && c.ch24 != null ? c.cap / (1 + c.ch24) : c.cap || 0), 0);
   $('kCap').textContent = big(cap);
@@ -138,7 +127,7 @@ function renderKpis() {
   $('kBtc').textContent = btc ? pctPlain(btc.cap / cap) : '–';
   $('kBtcSub').textContent = btc ? `Bitcoin ${usd(btc.price, { digits: 0 })}` : '';
   $('kBreadth').innerHTML = `<span class="up">${up}</span> / <span class="down">${down}</span>`;
-  $('kBreadthSub').textContent = `${cs.filter(c => c.stable).length} stablecoins`;
+  $('kBreadthSub').textContent = `${cs.filter(c => c.kind === 'stable').length} stablecoins, ${cs.filter(c => c.kind === 'wrapped').length} wrapped tokens`;
 }
 
 // ---------------------------------------------------------------- table
@@ -155,7 +144,7 @@ function renderTable() {
   const { key, dir } = state.sort;
   const q = state.query.trim().toLowerCase();
   const rows = state.coins
-    .filter(c => !state.hideStable || !c.stable)
+    .filter(c => !state.hideStable || c.kind === 'coin')
     .filter(c => !q || c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q))
     .sort((a, b) => {
       const x = a[key], y = b[key];
@@ -165,13 +154,13 @@ function renderTable() {
   $('rows').innerHTML = rows.map(c => `
     <tr tabindex="0" data-id="${esc(c.id)}" aria-selected="${c.id === state.selected}">
       <td class="num muted">${c.rank ?? ''}</td>
-      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)} <span class="sym">${esc(c.symbol)}</span></span>${c.stable ? '<span class="tag">stable</span>' : ''}</span></td>
+      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy"><span>${esc(c.name)} <span class="sym">${esc(c.symbol)}</span></span>${c.kind === 'stable' ? '<span class="tag">stable</span>' : c.kind === 'wrapped' ? `<span class="tag" title="Tracks the price of ${esc(c.tracks)}">wrapped</span>` : ''}</span></td>
       <td class="num">${usd(c.price)}</td>
       <td class="num ${cls(c.ch24)}">${pct(c.ch24)}</td>
       <td class="num hide-xs ${cls(c.ch7)}">${pct(c.ch7)}</td>
       <td class="num hide-sm ${cls(c.ch30)}">${pct(c.ch30)}</td>
       <td class="num hide-sm">${big(c.cap)}</td>
-      <td class="num hide-md hide-lg">${c.stable ? '–' : pctPlain(c.ath, 0)}</td>
+      <td class="num hide-md hide-lg">${c.kind === 'stable' ? '–' : pctPlain(c.ath, 0)}</td>
       <td class="hide-sm">${sparkSvg(c.spark, (c.ch7 ?? 0) >= 0)}</td>
     </tr>`).join('') || `<tr><td colspan="9" class="muted">No coins match “${esc(state.query)}”.</td></tr>`;
   document.querySelectorAll('th[data-k]').forEach(th => {
@@ -205,30 +194,31 @@ async function renderDetail() {
   document.querySelectorAll('.ranges button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === state.range));
   $('chartNote').textContent = 'Loading history…';
 
-  let h, btc;
-  try {
-    [h, btc] = await Promise.all([loadHistory(c.id), loadHistory('bitcoin')]);
-  } catch (err) {
-    $('chartNote').textContent = err.status === 429
-      ? 'The free data API is busy. Wait a minute and select the coin again.'
-      : 'Could not load the price history for this coin.';
-    $('stats').innerHTML = '';
+  const btcCoin = state.coins.find(x => x.id === BTC) || { id: BTC, symbol: 'BTC' };
+  const [h, btc] = await Promise.all([loadHistory(c), loadHistory(btcCoin)]);
+  if (c.id !== state.selected) return; // the user moved on while this loaded
+  if (!h) {
+    $('chartNote').textContent = c.kind === 'wrapped'
+      ? `No exchange lists this token directly. It tracks the price of ${c.tracks}.`
+      : 'None of the free exchange feeds (Kraken, Coinbase, Binance.US) list this coin, so there is no daily history to chart.';
+    $('stats').innerHTML = [['Market value', big(c.cap)], ['24h volume', big(c.vol)], ['Below all-time high', pctPlain(c.ath, 0)], ['7-day change', pct(c.ch7)]]
+      .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
     priceChart?.destroy(); priceChart = null;
     return;
   }
-  if (c.id !== state.selected) return; // the user moved on while this loaded
+  if (c.ch30 == null) { enrich(c); renderTable(); }
 
   const s = M.lastDays(h, state.range);
   const year = M.lastDays(h, 365);
   const dd = M.maxDrawdown(s.p);
-  const vs = c.id === 'bitcoin' ? null : M.versus(year, M.lastDays(btc, 365));
+  const vs = c.id === BTC || !btc ? null : M.versus(year, M.lastDays(btc, 365));
   const stats = [
     [`Return, ${state.range === 365 ? '1 year' : state.range + ' days'}`, pct(M.totalReturn(s.p)), cls(M.totalReturn(s.p))],
-    ['Annualised volatility', c.stable ? '–' : pctPlain(M.annualisedVol(s.p), 0)],
+    ['Annualised volatility', c.kind === 'stable' ? '–' : pctPlain(M.annualisedVol(s.p), 0)],
     ['Max drawdown', pctPlain(dd.drawdown, 0), dd.drawdown < 0 ? 'down' : ''],
-    ['Below all-time high', c.stable ? '–' : pctPlain(c.ath, 0)],
-    ['Beta to Bitcoin, 1y', vs ? num(vs.beta) : 'benchmark'],
-    ['Correlation with Bitcoin, 1y', vs ? num(vs.correlation) : 'benchmark'],
+    ['Below all-time high', c.kind === 'stable' ? '–' : pctPlain(c.ath, 0)],
+    ['Beta to Bitcoin, 1y', vs ? num(vs.beta) : c.id === BTC ? 'benchmark' : '–'],
+    ['Correlation with Bitcoin, 1y', vs ? num(vs.correlation) : c.id === BTC ? 'benchmark' : '–'],
     ['Market value', big(c.cap)],
     ['24h volume', big(c.vol)],
   ];
@@ -280,7 +270,7 @@ function select(id) {
 function riskCoins() {
   const snap = state.snapshot?.coins;
   if (!snap) return [];
-  return state.coins.filter(c => snap[c.id] && !c.stable && snap[c.id].p.length > 200).map(c => ({ ...c, h: snap[c.id] }));
+  return state.coins.filter(c => snap[c.id] && c.kind === 'coin' && snap[c.id].p.length > 200).map(c => ({ ...c, h: snap[c.id] }));
 }
 
 function renderScatter() {

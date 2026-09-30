@@ -36,7 +36,7 @@
           <h2 id="tHead">Top 30 by market value</h2>
           <div class="tools">
             <label class="search"><span class="sr">Search coins</span><input id="q" type="search" placeholder="Search" autocomplete="off"></label>
-            <label class="check"><input id="hideStable" type="checkbox"> Hide stablecoins</label>
+            <label class="check"><input id="hideStable" type="checkbox"> Hide stablecoins and wrapped tokens</label>
           </div>
         </div>
         <div class="table-scroll">
@@ -83,7 +83,7 @@
     <section class="panel" aria-labelledby="rrHead">
       <div class="panel-head">
         <h2 id="rrHead">Risk and return over the past year</h2>
-        <p class="muted small">Each dot is a coin. Further right is more volatile; higher is a better one-year return. Stablecoins are left out.</p>
+        <p class="muted small">Each dot is a coin. Further right is more volatile; higher is a better one-year return. Stablecoins and wrapped tokens are left out.</p>
       </div>
       <div class="scatter-box"><canvas id="scatter" aria-label="Risk and return scatter chart"></canvas></div>
       <p class="empty" id="scatterEmpty" hidden></p>
@@ -92,7 +92,7 @@
     <section class="panel" aria-labelledby="corrHead">
       <div class="panel-head">
         <h2 id="corrHead">How the 10 largest move together</h2>
-        <p class="muted small">Correlation of daily returns over the past year, from −1 (opposite) to +1 (in step). Stablecoins are left out.</p>
+        <p class="muted small">Correlation of daily returns over the past year, from −1 (opposite) to +1 (in step). Stablecoins and wrapped tokens are left out.</p>
       </div>
       <div class="heat-scroll"><table class="heat" id="heat"></table></div>
       <p class="empty" id="heatEmpty" hidden></p>
@@ -104,15 +104,15 @@
         <li><b>Returns</b> use daily closing prices in US dollars. Volatility is the standard deviation of daily log returns, scaled by √365 because crypto trades every day.</li>
         <li><b>Max drawdown</b> is the largest fall from a previous high to a later low within the period.</li>
         <li><b>Beta and correlation</b> compare each coin's daily returns with Bitcoin's on the same days. A beta of 1.5 means the coin has typically moved 1.5% for each 1% move in Bitcoin.</li>
-        <li><b>Stablecoins</b> are coins whose price barely moves (annualised volatility under 5% over 90 days). They are excluded from the risk charts.</li>
-        <li><b>Data</b> comes from the <a href="https://www.coingecko.com/en/api" rel="noopener">CoinGecko</a> public API. Prices load live in your browser; the one-year history is saved once a day by a scheduled job and is used when the live API is busy.</li>
+        <li><b>Stablecoins</b> are coins whose price barely moves (annualised volatility under 5% over 90 days). <b>Wrapped tokens</b> such as WBTC or stETH track another coin's price. Both are excluded from the risk charts.</li>
+        <li><b>Data</b>: prices, market values and rankings come live from <a href="https://coinpaprika.com" rel="noopener">CoinPaprika</a>; daily price history from the public market data of <a href="https://www.kraken.com" rel="noopener">Kraken</a>, with Coinbase and Binance.US as fallbacks. A scheduled job saves a year of history for the top 30 each day, which the page uses for the risk charts and whenever the live feeds are unavailable.</li>
       </ul>
       <p class="muted small">For information only, not investment advice.</p>
     </section>
   </main>
 
   <footer class="wrap foot">
-    <span>Data: <a href="https://www.coingecko.com" rel="noopener">Powered by CoinGecko</a></span>
+    <span>Data: <a href="https://coinpaprika.com" rel="noopener">CoinPaprika</a> and <a href="https://www.kraken.com" rel="noopener">Kraken</a></span>
     <a href="https://github.com/harsh-github007/Digital-Currency" rel="noopener">Source on GitHub</a>
   </footer>
 
