@@ -96,7 +96,7 @@ async function loadMarkets(snapshotMarkets) {
 async function loadHistory(coin) {
   if (state.histories.has(coin.id)) return state.histories.get(coin.id);
   const h = state.snapshot?.coins[coin.id] || await fetchHistory(coin.symbol);
-  state.histories.set(coin.id, h);
+  if (h) state.histories.set(coin.id, h); // a failed fetch is not cached, so selecting the coin again retries
   return h;
 }
 
@@ -183,9 +183,6 @@ const hasCharts = () => typeof Chart !== 'undefined';
 // The page must still show prices, the table and the correlation grid if the
 // chart library fails to load, so every chart call checks for it first.
 const NO_CHARTS = 'The chart library could not be loaded, so this chart is unavailable. Everything else on the page still works.';
-function chartsUnavailable() {
-  $('chartNote').textContent = NO_CHARTS;
-}
 
 function chartDefaults() {
   if (!hasCharts()) return;
@@ -263,7 +260,7 @@ async function renderDetail() {
       y1: { display: false, max: Math.max(...s.v) * 4, beginAtZero: true },
     },
   };
-  if (!hasCharts()) return;
+  if (!hasCharts()) { $('chartNote').textContent = NO_CHARTS; return; }
   if (priceChart) { priceChart.data = data; priceChart.options = options; priceChart.update(); }
   else priceChart = new Chart($('priceChart'), { data, options });
 }
@@ -294,6 +291,8 @@ function renderScatter() {
   $('scatterEmpty').hidden = true;
   const pts = coins.map(c => ({ x: M.annualisedVol(c.h.p) * 100, y: 100 * (1 + M.totalReturn(c.h.p)), ret: M.totalReturn(c.h.p), label: c.symbol, name: c.name, cap: c.cap, rank: c.rank }));
   const maxCap = Math.max(...pts.map(p => p.cap));
+  const ys = pts.map(p => p.y);
+  const yMin = Math.min(...ys) / 1.35, yMax = Math.max(...ys) * 1.35; // headroom for the dots and their labels
   const labels = {
     id: 'labels',
     afterDatasetsDraw(chart) {
@@ -316,6 +315,7 @@ function renderScatter() {
         x: { title: { display: true, text: 'Annualised volatility (%)' }, beginAtZero: true },
         y: {
           type: 'logarithmic',
+          min: yMin, max: yMax,
           title: { display: true, text: 'What $100 a year ago is worth now (log scale)' },
           afterBuildTicks: axis => {
             const nice = [10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
@@ -398,7 +398,6 @@ async function start() {
     return;
   }
   renderStatus(); renderKpis(); renderTable();
-  if (!hasCharts()) chartsUnavailable();
   renderDetail(); renderScatter(); renderHeat();
   setInterval(() => { if (!document.hidden) refresh().catch(() => {}); }, REFRESH_MS);
 }

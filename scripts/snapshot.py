@@ -39,20 +39,37 @@ WRAPPED = {
 KRAKEN_NAMES = {"BTC": "XBT", "DOGE": "XDG"}
 
 
+def _retry_after(e, attempt):
+    """Seconds to wait before retrying: the server's Retry-After if it gives a number, else back off."""
+    try:
+        return int(e.headers.get("Retry-After") or 0) or 10 * (attempt + 1)
+    except (TypeError, ValueError):  # Retry-After may be an HTTP date
+        return 10 * (attempt + 1)
+
+
 def get(url, tries=4, opener=urllib.request.urlopen):
-    """GET a JSON endpoint, waiting and retrying on rate limits and server errors."""
+    """GET a JSON endpoint, waiting and retrying on rate limits, server errors and dropped connections."""
     req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "digital-currency-snapshot"})
+    host = url.split("/")[2]
     for attempt in range(tries):
+        last = attempt == tries - 1
         try:
             with opener(req, timeout=30) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 504) and attempt < tries - 1:
-                wait = int(e.headers.get("Retry-After") or 0) or 10 * (attempt + 1)
-                print(f"  {e.code} from {url.split('/')[2]}; waiting {wait}s", file=sys.stderr)
+            if e.code in (429, 500, 502, 503, 504) and not last:
+                wait = _retry_after(e, attempt)
+                print(f"  {e.code} from {host}; waiting {wait}s", file=sys.stderr)
                 time.sleep(wait)
                 continue
             raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError, json.JSONDecodeError) as e:
+            # a dropped connection, DNS hiccup, timeout or truncated body: worth another try
+            if last:
+                raise
+            wait = 10 * (attempt + 1)
+            print(f"  {type(e).__name__} from {host}; waiting {wait}s", file=sys.stderr)
+            time.sleep(wait)
     raise RuntimeError(f"gave up on {url}")
 
 
@@ -131,9 +148,18 @@ class History:
         return None
 
 
-def build(get_json=get, pause=PAUSE):
+def load_previous(out=OUT):
+    """The history saved by the last run, so one failed fetch doesn't erase a coin's data."""
+    try:
+        return json.loads((out / "history.json").read_text()).get("coins", {})
+    except (OSError, ValueError):
+        return {}
+
+
+def build(get_json=get, pause=PAUSE, previous=None):
     coins = [from_paprika(c) for c in get_json(f"{PAPRIKA}/tickers?quotes=USD&limit={TOP_N}")]
-    hist, history = History(get_json), {}
+    previous = load_previous() if previous is None else previous
+    hist, history, kept = History(get_json), {}, 0
     for i, c in enumerate(coins):
         if c["kind"] == "wrapped":
             continue
@@ -141,9 +167,19 @@ def build(get_json=get, pause=PAUSE):
         h = hist.fetch(c["symbol"])
         if h:
             history[c["id"]] = {"symbol": c["symbol"], "name": c["name"], **h}
-        print(f"  {c['rank']:>2} {c['symbol']:<7} {len(h['t']) if h else 0:>4} days  {h['source'] if h else 'no history'}")
+            note = h["source"]
+        elif c["id"] in previous:
+            history[c["id"]] = previous[c["id"]]
+            kept += 1
+            note = "kept previous day's history"
+        else:
+            note = "no history"
+        days = len(history[c["id"]]["t"]) if c["id"] in history else 0
+        print(f"  {c['rank']:>2} {c['symbol']:<7} {days:>4} days  {note}")
     if not history:
         raise RuntimeError("no price history could be fetched from any exchange")
+    if kept:
+        print(f"  {kept} coin(s) kept the previous day's history because every exchange failed", file=sys.stderr)
     return coins, history
 
 
