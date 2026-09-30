@@ -57,16 +57,7 @@ python -m pytest tests        # snapshot script tests
 - It commits updated files in `data/` only when something changed.
 - It needs no API keys.
 
-## Project history
-
-The first version (2022) was a Power BI dashboard fed by Yahoo Finance's CSV download link. It is kept in [`powerbi/`](powerbi/): the `.pbit` template, the list of coins, and a PDF export of the report. The 2026 rebuild replaced it for these reasons:
-- **The data feed no longer works.** Yahoo closed that download link in 2023.
-- **The dates were fixed** at July 2021 to July 2022.
-- **The headline cards added prices together,** so "Open", "High" and "Low" showed sums across days rather than prices.
-- **The file only ran on one computer.** It read from a fixed path on the original author's PC and needed Power BI Desktop, which runs only on Windows.
-- **The coin list was out of date.** Several coins in it have since collapsed or been delisted, including FTT and BUSD. The new version always uses the current top 30.
-
-The rebuild first used CoinGecko's free API, but by 2026 its content delivery network rejected keyless data requests from browsers and GitHub's servers, so the data now comes from CoinPaprika and the exchanges' own public feeds.
+The [`powerbi/`](powerbi/) folder holds a Power BI version of the dashboard: a report template, its coin list and a PDF export.
 
 ## Disclaimer
 
