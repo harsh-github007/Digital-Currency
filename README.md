@@ -4,6 +4,10 @@ A web dashboard for the 30 largest cryptocurrencies by market value. It shows li
 
 **Live site:** https://harsh-github007.github.io/Digital-Currency/
 
+![Market workspace with live prices and a coin chart](assets/screenshot.png)
+
+The interface uses a warm gray and green palette, a prominent coin-detail chart, and a scrollable market table. Search, filters, keyboard-accessible sorting, and chart range controls keep exploration quick. Short coin-selection transitions respect reduced-motion preferences.
+
 ## What it shows
 
 - **Market summary:** total market value of the top 30, 24-hour volume, Bitcoin's share, and how many coins rose or fell.
