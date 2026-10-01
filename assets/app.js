@@ -275,8 +275,11 @@ function select(id) {
   state.selected = id;
   window.history.replaceState(null, '', '#' + id);
   document.querySelectorAll('#rows tr').forEach(tr => tr.setAttribute('aria-selected', tr.dataset.id === id));
+  $('detail').classList.remove('detail-enter');
+  void $('detail').offsetWidth;
+  $('detail').classList.add('detail-enter');
   renderDetail();
-  if (window.matchMedia('(max-width: 980px)').matches) $('detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (window.matchMedia('(max-width: 980px)').matches) $('detail').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
 }
 
 // ---------------------------------------------------------------- risk views (need the daily snapshot)
@@ -371,11 +374,11 @@ function wire() {
     if (e.key === 'ArrowDown') { e.preventDefault(); tr.nextElementSibling?.focus(); }
     if (e.key === 'ArrowUp') { e.preventDefault(); tr.previousElementSibling?.focus(); }
   });
-  document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => {
+  document.querySelectorAll('th[data-k]').forEach(th => { th.tabIndex = 0; th.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); th.click(); } }); th.addEventListener('click', () => {
     const k = th.dataset.k;
     state.sort = state.sort.key === k ? { key: k, dir: -state.sort.dir } : { key: k, dir: k === 'rank' || k === 'name' ? 1 : -1 };
     renderTable();
-  }));
+  }); });
   $('q').addEventListener('input', e => { state.query = e.target.value; renderTable(); });
   $('hideStable').addEventListener('change', e => { state.hideStable = e.target.checked; renderKpis(); renderTable(); });
   document.querySelectorAll('.ranges button').forEach(b => b.addEventListener('click', () => { state.range = +b.dataset.d; renderDetail(); }));
