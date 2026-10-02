@@ -138,3 +138,9 @@ html{scroll-behavior:smooth;scroll-padding-top:24px}body{-webkit-font-smoothing:
 /* Canvas must not impose its desktop intrinsic width on a narrow grid. */
 .detail{grid-template-columns:minmax(0,1fr)}.chart-box,.scatter-box{min-width:0;max-width:100%}.chart-box canvas,.scatter-box canvas{max-width:100%}.coin-head>div{min-width:0}
 @media(max-width:640px){.coin-head{grid-template-columns:32px minmax(0,1fr)}.coin-head img{width:32px;height:32px}.price-block{grid-column:2;text-align:left}.coin-head .price-block b{font-size:28px}.chart-box{overflow:hidden}}
+
+/* Shared portfolio palette: warm neutral surfaces and green actions. */
+:root{--portfolio-bg:#f4f3ee;--portfolio-surface:#fffefa;--portfolio-ink:#243229;--portfolio-muted:#5c675f;--portfolio-line:#d6dcd5;--portfolio-accent:#315b46;--portfolio-hover:#244635;--portfolio-soft:#e5ece4}
+:root,html[data-theme="light"]{--bg:var(--portfolio-bg);--surface:var(--portfolio-surface);--chip:var(--portfolio-soft);--ink:var(--portfolio-ink);--muted:var(--portfolio-muted);--line:var(--portfolio-line);--accent:var(--portfolio-accent);color-scheme:light}
+::selection{background:#d4e2d3;color:#243229}a,button,input,select{accent-color:var(--portfolio-accent)}:focus-visible{outline:2px solid var(--portfolio-accent);outline-offset:4px}h1{letter-spacing:-.035em;text-wrap:balance;overflow-wrap:normal}h1 em{color:var(--portfolio-accent)}
+.hero-copy>.eyebrow,.hero-copy>.hero-label,.section-head .eyebrow,.methodology>div>.eyebrow,.hero .wrap>.label,.section-label,.top-inner .eyebrow{display:none}
