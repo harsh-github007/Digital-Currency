@@ -341,9 +341,13 @@ function renderScatter() {
 }
 
 function heatColour(r) {
-  // orange for positive correlation, blue for negative, transparent near zero
-  const a = Math.min(1, Math.abs(r));
-  return r >= 0 ? `rgba(255, 90, 31, ${0.1 + 0.8 * a})` : `rgba(59, 130, 246, ${0.1 + 0.8 * a})`;
+  // Green for positive, blue for negative; signed numbers carry direction too.
+  const intensity = Math.min(1, Math.abs(r));
+  const endpoint = r >= 0 ? [49, 91, 70] : [42, 78, 112];
+  const channels = endpoint.map(c => Math.round(255 + (c - 255) * intensity));
+  const linear = channels.map(c => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  return { background: `rgb(${channels.join(',')})`, text: luminance < 0.179 ? '#fff' : '#111' };
 }
 
 function renderHeat() {
@@ -358,8 +362,8 @@ function renderHeat() {
   const head = `<tr><th></th>${coins.map(c => `<th scope="col">${esc(c.symbol)}</th>`).join('')}</tr>`;
   const body = coins.map(a => `<tr><th scope="row">${esc(a.symbol)}</th>${coins.map(b => {
     const r = a.id === b.id ? 1 : M.versus(a.h, b.h).correlation;
-    const dark = Math.abs(r) > 0.6;
-    return `<td style="background:${heatColour(r)};color:${dark ? '#111' : 'inherit'}" title="${esc(a.name)} and ${esc(b.name)}: ${num(r)}">${num(r)}</td>`;
+    const heat = heatColour(r);
+    return `<td style="background:${heat.background};color:${heat.text}" title="${esc(a.name)} and ${esc(b.name)}: ${num(r)}">${num(r)}</td>`;
   }).join('')}</tr>`).join('');
   $('heat').innerHTML = `<thead>${head}</thead><tbody>${body}</tbody>`;
 }
