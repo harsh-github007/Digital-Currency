@@ -6,7 +6,7 @@ A web dashboard for the 30 largest cryptocurrencies by market value. It shows li
 
 ![Market workspace with live prices and a coin chart](assets/screenshot.png)
 
-The interface uses a warm gray and green palette, a prominent coin-detail chart, and a scrollable market table. Search, filters, keyboard-accessible sorting, and chart range controls keep exploration quick. Short coin-selection transitions respect reduced-motion preferences.
+The interface uses white cards on a soft grey page, with a dark version that follows the system setting. The market table fits its card at every width: columns drop away on smaller screens instead of being cut off, and the table scrolls inside its card with a sticky header. Below it, the selected coin's chart sits beside its risk statistics. Search, a stablecoin filter, keyboard-accessible sorting and chart range controls keep exploration quick, and transitions respect reduced-motion preferences.
 
 ## What it shows
 
