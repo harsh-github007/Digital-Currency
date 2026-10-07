@@ -157,17 +157,19 @@ function renderTable() {
       if (typeof x === 'string') return x.localeCompare(y) * dir;
       return ((x ?? -Infinity) - (y ?? -Infinity)) * dir;
     });
+  const tag = c => c.kind === 'stable' ? '<span class="tag">Stable</span>'
+    : c.kind === 'wrapped' ? `<span class="tag" title="Tracks the price of ${esc(c.tracks)}">Wrapped</span>` : '';
   $('rows').innerHTML = rows.map(c => `
     <tr tabindex="0" data-id="${esc(c.id)}" aria-selected="${c.id === state.selected}">
       <td class="num muted">${c.rank ?? ''}</td>
-      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(c.name)} <span class="sym">${esc(c.symbol)}</span></span>${c.kind === 'stable' ? '<span class="tag">stable</span>' : c.kind === 'wrapped' ? `<span class="tag" title="Tracks the price of ${esc(c.tracks)}">wrapped</span>` : ''}</span></td>
-      <td class="num">${usd(c.price)}</td>
-      <td class="num ${cls(c.ch24)}">${pct(c.ch24)}</td>
-      <td class="num hide-xs ${cls(c.ch7)}">${pct(c.ch7)}</td>
-      <td class="num hide-sm ${cls(c.ch30)}">${pct(c.ch30)}</td>
-      <td class="num hide-sm">${big(c.cap)}</td>
-      <td class="num hide-md hide-lg">${c.kind === 'stable' ? '–' : pctPlain(c.ath, 0)}</td>
-      <td class="hide-sm">${sparkSvg(c.spark, (c.ch7 ?? 0) >= 0)}</td>
+      <td><span class="coin"><img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"><span class="coin-text"><span class="coin-name" title="${esc(c.name)}">${esc(c.name)}</span><span class="coin-sub">${esc(c.symbol)}${tag(c)}</span></span></span></td>
+      <td class="num price">${usd(c.price)}</td>
+      <td class="num"><span class="pill ${cls(c.ch24)}">${pct(c.ch24)}</span></td>
+      <td class="num c-7d ${cls(c.ch7)}">${pct(c.ch7)}</td>
+      <td class="num c-30d ${cls(c.ch30)}">${pct(c.ch30)}</td>
+      <td class="num c-cap">${big(c.cap)}</td>
+      <td class="num c-peak muted">${c.kind === 'stable' ? '–' : pctPlain(c.ath, 0)}</td>
+      <td class="num c-spark">${sparkSvg(c.spark, (c.ch7 ?? 0) >= 0)}</td>
     </tr>`).join('') || `<tr><td colspan="9" class="muted">No coins match “${esc(state.query)}”.</td></tr>`;
   document.querySelectorAll('th[data-k]').forEach(th => {
     th.setAttribute('aria-sort', th.dataset.k === key ? (dir > 0 ? 'ascending' : 'descending') : 'none');
@@ -279,7 +281,8 @@ function select(id) {
   void $('detail').offsetWidth;
   $('detail').classList.add('detail-enter');
   renderDetail();
-  if (window.matchMedia('(max-width: 980px)').matches) $('detail').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  const r = $('detail').getBoundingClientRect();
+  if (r.top > window.innerHeight * 0.6 || r.bottom < 80) $('detail').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
 }
 
 // ---------------------------------------------------------------- risk views (need the daily snapshot)
@@ -343,8 +346,10 @@ function renderScatter() {
 function heatColour(r) {
   // Green for positive, blue for negative; signed numbers carry direction too.
   const intensity = Math.min(1, Math.abs(r));
-  const endpoint = r >= 0 ? [49, 91, 70] : [42, 78, 112];
-  const channels = endpoint.map(c => Math.round(255 + (c - 255) * intensity));
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const base = dark ? [44, 44, 46] : [245, 245, 247];
+  const endpoint = dark ? (r >= 0 ? [36, 138, 61] : [10, 96, 200]) : (r >= 0 ? [26, 120, 66] : [0, 92, 190]);
+  const channels = endpoint.map((c, i) => Math.round(base[i] + (c - base[i]) * intensity));
   const linear = channels.map(c => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
   const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
   return { background: `rgb(${channels.join(',')})`, text: luminance < 0.179 ? '#fff' : '#111' };
@@ -387,7 +392,7 @@ function wire() {
   $('hideStable').addEventListener('change', e => { state.hideStable = e.target.checked; renderKpis(); renderTable(); });
   document.querySelectorAll('.ranges button').forEach(b => b.addEventListener('click', () => { state.range = +b.dataset.d; renderDetail(); }));
   window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (id && id !== state.selected) select(id); });
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { chartDefaults(); priceChart?.destroy(); priceChart = null; renderDetail(); renderScatter(); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { chartDefaults(); priceChart?.destroy(); priceChart = null; renderDetail(); renderScatter(); renderHeat(); });
 }
 
 async function refresh() {
