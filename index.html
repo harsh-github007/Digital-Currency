@@ -7,130 +7,112 @@
   <meta property="og:title" content="Crypto Market Monitor">
   <meta property="og:description" content="Live prices, one-year risk statistics and correlations for the 30 largest cryptocurrencies.">
   <meta property="og:url" content="https://harsh-github007.github.io/Digital-Currency/">
-  <meta property="og:image" content="https://harsh-github007.github.io/Digital-Currency/assets/og.png?v=3">
+  <meta property="og:image" content="https://harsh-github007.github.io/Digital-Currency/assets/og.png?v=2">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <title>Crypto Market Monitor</title>
   <meta name="description" content="Live prices, one-year risk statistics and correlations for the 30 largest cryptocurrencies.">
-  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-  <link rel="stylesheet" href="assets/style.css?v=3">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ff9500'/><path d='M8 21l6-7 4 4 6-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <meta name="theme-color" content="#eeefea">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23ff4400'/><path d='M8 21l6-7 4 4 6-8' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 </head>
 <body>
-  <nav class="nav" aria-label="Main navigation">
-    <div class="wrap nav-inner">
-      <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>Market Monitor</a>
-      <div class="nav-links">
-        <a href="#market">Market</a>
-        <a href="#risk-view">Risk</a>
-        <a href="#method-view">Method</a>
-        <a href="https://github.com/harsh-github007/Digital-Currency" rel="noopener">GitHub ↗</a>
-      </div>
-    </div>
-  </nav>
+  <nav class="masthead wrap" aria-label="Main navigation"><a class="wordmark" href="./">◈ <strong>Market Monitor</strong><span> / crypto</span></a><div><a href="#risk-view">Risk &amp; return</a><a href="#method-view">Methodology</a><a href="https://github.com/harsh-github007/Digital-Currency">GitHub ↗</a></div></nav>
+  <header class="top">
+    <div class="wrap top-inner">
+      <div>
 
-  <header class="wrap hero">
-    <div>
-      <p class="eyebrow">Market risk · Top 30 cryptocurrencies</p>
-      <h1>Thirty coins.<br><span>One year of risk.</span></h1>
-      <p class="lede">Live prices next to a year of volatility, drawdown, and beta and correlation to Bitcoin.</p>
+        <h1>Cryptocurrency prices,<br><em>risk and correlations.</em></h1>
+        <p class="lede">Live prices meet a year of perspective. Explore the largest cryptocurrencies, then look beyond the daily change.</p>
+      </div>
+      <span class="status" id="status" role="status"><i></i><span>Loading…</span></span>
     </div>
-    <span class="status" id="status" role="status"><i></i><span>Loading…</span></span>
   </header>
 
   <main class="wrap">
     <section class="kpis" aria-label="Market summary">
-      <div class="card kpi"><span class="label">Top 30 market value</span><b id="kCap">–</b><small id="kCapSub">&nbsp;</small></div>
-      <div class="card kpi"><span class="label">24h trading volume</span><b id="kVol">–</b><small id="kVolSub">&nbsp;</small></div>
-      <div class="card kpi"><span class="label">Bitcoin's share of top 30</span><b id="kBtc">–</b><small id="kBtcSub">&nbsp;</small></div>
-      <div class="card kpi"><span class="label">Up / down over 24h</span><b id="kBreadth">–</b><small id="kBreadthSub">&nbsp;</small></div>
+      <div class="kpi"><span class="label">Top 30 market value</span><b id="kCap">–</b><small id="kCapSub">&nbsp;</small></div>
+      <div class="kpi"><span class="label">24h trading volume</span><b id="kVol">–</b><small id="kVolSub">&nbsp;</small></div>
+      <div class="kpi"><span class="label">Bitcoin's share of top 30</span><b id="kBtc">–</b><small id="kBtcSub">&nbsp;</small></div>
+      <div class="kpi"><span class="label">Up / down over 24h</span><b id="kBreadth">–</b><small id="kBreadthSub">&nbsp;</small></div>
     </section>
 
-    <section class="card market" id="market" aria-labelledby="tHead">
-      <div class="card-head">
-        <div>
-          <h2 id="tHead">The top 30</h2>
-          <p class="muted">Select a coin to see its price history and risk.</p>
-        </div>
-        <div class="tools">
-          <label class="search"><span class="sr">Search coins</span><input id="q" type="search" placeholder="Search" autocomplete="off"></label>
-          <label class="toggle"><input id="hideStable" type="checkbox"><span>Hide stablecoins &amp; wrapped</span></label>
-        </div>
-      </div>
-      <div class="table-scroll">
-        <table id="table">
-          <colgroup><col class="w-rank"><col class="w-coin"><col class="w-price"><col class="w-pct"><col class="w-pct c-7d"><col class="w-pct c-30d"><col class="w-cap c-cap"><col class="w-pct c-peak"><col class="w-spark c-spark"></colgroup>
-          <thead>
-            <tr>
-              <th data-k="rank" class="num">#</th>
-              <th data-k="name">Coin</th>
-              <th data-k="price" class="num">Price</th>
-              <th data-k="ch24" class="num">24h</th>
-              <th data-k="ch7" class="num c-7d">7d</th>
-              <th data-k="ch30" class="num c-30d">30d</th>
-              <th data-k="cap" class="num c-cap">Market value</th>
-              <th data-k="ath" class="num c-peak" title="How far the price is below its all-time high">From peak</th>
-              <th class="num c-spark">7 days</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card detail" id="detail" aria-live="polite" aria-label="Selected coin">
-      <div class="coin-head">
-        <img id="dLogo" alt="" width="44" height="44" onerror="this.style.visibility='hidden'">
-        <div class="coin-title">
-          <h2 id="dName">–</h2>
-          <span id="dSym" class="muted"></span>
-        </div>
-        <div class="price-block">
-          <b id="dPrice">–</b>
-          <span id="dChange"></span>
-        </div>
-      </div>
-      <div class="detail-body">
-        <div class="chart-col">
-          <div class="ranges" role="group" aria-label="Chart range">
-            <button data-d="30">30D</button><button data-d="90">90D</button><button data-d="365" aria-pressed="true">1Y</button>
+    <div class="grid">
+      <section class="panel table-panel" aria-labelledby="tHead">
+        <div class="panel-head">
+          <div><span class="section-label">THE MARKET</span><h2 id="tHead">Explore the top 30</h2><p class="table-hint">Select a coin to explore its price history.</p></div>
+          <div class="tools">
+            <label class="search"><span class="sr">Search coins</span><input id="q" type="search" placeholder="Search a coin…" autocomplete="off"></label>
+            <label class="check"><input id="hideStable" type="checkbox"> Hide stablecoins and wrapped tokens</label>
           </div>
-          <div class="chart-box"><canvas id="priceChart" aria-label="Price chart"></canvas></div>
-          <p class="chart-note muted" id="chartNote"></p>
         </div>
+        <div class="table-scroll">
+          <table id="table">
+            <thead>
+              <tr>
+                <th data-k="rank" class="num">#</th>
+                <th data-k="name">Coin</th>
+                <th data-k="price" class="num">Price</th>
+                <th data-k="ch24" class="num">24h</th>
+                <th data-k="ch7" class="num hide-xs">7d</th>
+                <th data-k="ch30" class="num hide-sm">30d</th>
+                <th data-k="cap" class="num hide-sm">Market value</th>
+                <th data-k="ath" class="num hide-md hide-lg" title="How far the price is below its all-time high">From peak</th>
+                <th class="hide-sm">7 days</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <aside class="panel detail" id="detail" aria-live="polite">
+        <div class="coin-head">
+          <img id="dLogo" alt="" width="36" height="36" onerror="this.style.visibility='hidden'">
+          <div>
+            <h2 id="dName">–</h2>
+            <span id="dSym" class="muted"></span>
+          </div>
+          <div class="price-block">
+            <b id="dPrice">–</b>
+            <span id="dChange"></span>
+          </div>
+        </div>
+        <div class="ranges" role="group" aria-label="Chart range">
+          <button data-d="30">30D</button><button data-d="90">90D</button><button data-d="365" aria-pressed="true">1Y</button>
+        </div>
+        <div class="chart-box"><canvas id="priceChart" aria-label="Price chart"></canvas></div>
+        <p class="chart-note" id="chartNote"></p>
         <dl class="stats" id="stats"></dl>
-      </div>
-    </section>
-
-    <div class="pair">
-      <section class="card" id="risk-view" aria-labelledby="rrHead">
-        <div class="card-head stacked">
-          <h2 id="rrHead">Risk and return, past year</h2>
-          <p class="muted">Each dot is a coin; size is market value. Further right is more volatile, higher is a better return. The line at $100 is break-even.</p>
-        </div>
-        <div class="scatter-box"><canvas id="scatter" aria-label="Risk and return scatter chart"></canvas></div>
-        <p class="empty muted" id="scatterEmpty" hidden></p>
-      </section>
-
-      <section class="card" aria-labelledby="corrHead">
-        <div class="card-head stacked">
-          <h2 id="corrHead">How the 10 largest move together</h2>
-          <p class="muted">Correlation of daily returns over the past year, from −1 (opposite) to +1 (in step).</p>
-        </div>
-        <div class="heat-scroll"><table class="heat" id="heat"></table></div>
-        <p class="empty muted" id="heatEmpty" hidden></p>
-      </section>
+      </aside>
     </div>
 
-    <section class="card method" id="method-view" aria-labelledby="mHead">
+    <section class="panel" id="risk-view" aria-labelledby="rrHead">
+      <div class="panel-head">
+        <h2 id="rrHead">Risk and return over the past year</h2>
+        <p class="muted small">Each dot is a coin with a full year of prices; its size shows market value. Further right is more volatile; higher is a better one-year return, with the line at $100 marking break-even. Stablecoins and wrapped tokens are left out.</p>
+      </div>
+      <div class="scatter-box"><canvas id="scatter" aria-label="Risk and return scatter chart"></canvas></div>
+      <p class="empty" id="scatterEmpty" hidden></p>
+    </section>
+
+    <section class="panel" aria-labelledby="corrHead">
+      <div class="panel-head">
+        <h2 id="corrHead">How the 10 largest move together</h2>
+        <p class="muted small">Correlation of daily returns over the past year, from −1 (opposite) to +1 (in step). Stablecoins and wrapped tokens are left out.</p>
+      </div>
+      <div class="heat-scroll"><table class="heat" id="heat"></table></div>
+      <p class="empty" id="heatEmpty" hidden></p>
+    </section>
+
+    <section class="panel method" id="method-view" aria-labelledby="mHead">
       <h2 id="mHead">How the numbers are calculated</h2>
       <ul>
         <li><b>Returns</b> use daily closing prices in US dollars. Volatility is the standard deviation of daily log returns, scaled by √365 because crypto trades every day.</li>
         <li><b>Max drawdown</b> is the largest fall from a previous high to a later low within the period.</li>
         <li><b>Beta and correlation</b> compare each coin's daily returns with Bitcoin's on the same days. A beta of 1.5 means the coin has typically moved 1.5% for each 1% move in Bitcoin.</li>
-        <li><b>Stablecoins</b> are coins whose price barely moves (annualised volatility under 5% over 90 days). <b>Wrapped tokens</b> such as WBTC or stETH track another coin's price. Both are left out of the risk charts.</li>
+        <li><b>Stablecoins</b> are coins whose price barely moves (annualised volatility under 5% over 90 days). <b>Wrapped tokens</b> such as WBTC or stETH track another coin's price. Both are excluded from the risk charts.</li>
         <li><b>Data</b>: prices, market values and rankings come live from <a href="https://coinpaprika.com" rel="noopener">CoinPaprika</a>; daily price history from the public market data of <a href="https://www.kraken.com" rel="noopener">Kraken</a>, with Coinbase and Binance.US as fallbacks. A scheduled job saves a year of history for the top 30 each day, which the page uses for the risk charts and whenever the live feeds are unavailable.</li>
       </ul>
       <p class="muted small">For information only, not investment advice.</p>
@@ -143,6 +125,6 @@
   </footer>
 
   <script src="assets/vendor/chart.umd.js"></script>
-  <script type="module" src="assets/app.js?v=20261007"></script>
+  <script type="module" src="assets/app.js?v=20260930"></script>
 </body>
 </html>
